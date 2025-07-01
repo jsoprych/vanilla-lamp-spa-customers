@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "target": "ES6",
+    "module": "ES2020",
+    "outDir": "./dist/assets/js",
+    "rootDir": "./src/ts",
+    "strict": true,
+    "esModuleInterop": true,
+    "moduleResolution": "node",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/ts/*"]
+    }
+  },
+  "include": ["src/ts/**/*.ts"]
+}

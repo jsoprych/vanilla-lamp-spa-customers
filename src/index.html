@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Management</title>
+    <<link rel="stylesheet" href="assets/css/styles.css">
+    <script type="module" src="assets/js/app.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <h1>Customer Management</h1>
+        </header>
+        
+        <div class="main-content">
+            <aside class="sidebar">
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="Search customers...">
+                    <button id="searchBtn">Search</button>
+                </div>
+                <div class="customer-list" id="customerList">
+                    <!-- Customer list will be populated here -->
+                </div>
+            </aside>
+            
+            <main class="detail-view">
+                <div class="customer-detail" id="customerDetail">
+                    <div class="detail-header">
+                        <h2>Select a customer</h2>
+                    </div>
+                </div>
+                
+                <div class="tabs">
+                    <button class="tab-btn active" data-tab="info">Basic Info</button>
+                    <button class="tab-btn" data-tab="contacts">Contacts</button>
+                    <button class="tab-btn" data-tab="addresses">Addresses</button>
+                    <button class="tab-btn" data-tab="activity">Activity</button>
+                </div>
+                
+                <div class="tab-content active" id="infoTab">
+                    <!-- Basic info will be loaded here -->
+                </div>
+                
+                <div class="tab-content" id="contactsTab">
+                    <div class="contact-list" id="contactList">
+                        <!-- Contacts will be loaded here -->
+                    </div>
+                </div>
+                
+                <div class="tab-content" id="addressesTab">
+                    <div class="address-list" id="addressList">
+                        <!-- Addresses will be loaded here -->
+                    </div>
+                </div>
+                
+                <div class="tab-content" id="activityTab">
+                    <div class="activity-list" id="activityList">
+                        <!-- Activity will be loaded here -->
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+</body>
+</html>

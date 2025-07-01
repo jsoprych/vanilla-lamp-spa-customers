@@ -1,0 +1,940 @@
+PROJECT SNAPSHOT - Project: customer-spa
+Created: 2025-06-30 22:22:34
+Root Directory: /home/john/CODE/PHP/VANILLA/EXAMPLES/customer-spa
+================================================================================
+
+PROJECT STRUCTURE
+--------------------------------------------------------------------------------
+[DIR] customer-spa/
+  [FILE] package.json
+  [FILE] package-lock.json
+  [FILE] project_snapshot.txt
+  [FILE] tsconfig.json
+  [FILE] vite.config.js
+[DIR] src/
+  [FILE] index.html
+ [DIR] ts/
+   [FILE] app.ts
+   [FILE] customerService.ts
+   [FILE] models.ts
+   [FILE] ui.ts
+ [DIR] scss/
+ [DIR] css/
+   [FILE] styles.css
+[DIR] database/
+[DIR] node_modules/
+  [FILE] .package-lock.json
+[DIR] server/
+ [DIR] api/
+   [FILE] activity.php
+   [FILE] contacts.php
+   [FILE] customers.php
+[DIR] dist/
+
+================================================================================
+
+FILE CONTENTS
+--------------------------------------------------------------------------------
+
+FILE: package.json
+--------------------------------------------------------------------------------
+{
+  "name": "customer-spa",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "tsc && cp -r src/scss dist/assets/css && cp src/index.html dist/",
+    "dev": "tsc -w",
+    "start": "php -S localhost:8000 -t dist"
+  },
+  "devDependencies": {
+    "typescript": "^4.0.0"
+  }
+}--------------------------------------------------------------------------------
+
+FILE: package-lock.json
+--------------------------------------------------------------------------------
+{
+  "name": "customer-spa",
+  "version": "1.0.0",
+  "lockfileVersion": 3,
+  "requires": true,
+  "packages": {
+    "": {
+      "name": "customer-spa",
+      "version": "1.0.0",
+      "devDependencies": {
+        "typescript": "^4.0.0"
+      }
+    },
+    "node_modules/typescript": {
+      "version": "4.9.5",
+      "resolved": "https://registry.npmjs.org/typescript/-/typescript-4.9.5.tgz",
+      "integrity": "sha512-1FXk9E2Hm+QzZQ7z+McJiHL4NW1F2EzMu9Nq9i3zAaGqibafqYwCVU6WyWAuyQRRzOlxou8xZSyXLEN8oKj24g==",
+      "dev": true,
+      "bin": {
+        "tsc": "bin/tsc",
+        "tsserver": "bin/tsserver"
+      },
+      "engines": {
+        "node": ">=4.2.0"
+      }
+    }
+  }
+}
+--------------------------------------------------------------------------------
+
+FILE: project_snapshot.txt
+--------------------------------------------------------------------------------
+[ERROR: Unable to read project_snapshot.txt]
+--------------------------------------------------------------------------------
+
+FILE: server/api/activity.php
+--------------------------------------------------------------------------------
+<?php
+header('Content-Type: application/json');
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: GET');
+header('Access-Control-Allow-Headers: Content-Type');
+
+$dbPath = __DIR__ . '/../../database/customer.db';
+
+try {
+    $db = new PDO("sqlite:$dbPath");
+    $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+    $customerId = $_GET['customer_id'] ?? null;
+
+    if (!$customerId) {
+        http_response_code(400);
+        echo json_encode(['error' => 'customer_id parameter is required']);
+        exit;
+    }
+
+    $stmt = $db->prepare("SELECT * FROM customer_activity WHERE customer_id = :customer_id ORDER BY created_at DESC");
+    $stmt->bindParam(':customer_id', $customerId, PDO::PARAM_INT);
+    $stmt->execute();
+    $activities = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    echo json_encode($activities);
+} catch (PDOException $e) {
+    http_response_code(500);
+    echo json_encode(['error' => $e->getMessage()]);
+}
+?>--------------------------------------------------------------------------------
+
+FILE: server/api/contacts.php
+--------------------------------------------------------------------------------
+<?php
+header('Content-Type: application/json');
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: GET');
+header('Access-Control-Allow-Headers: Content-Type');
+
+$dbPath = __DIR__ . '/../../database/customer.db';
+
+try {
+    $db = new PDO("sqlite:$dbPath");
+    $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+    $customerId = $_GET['customer_id'] ?? null;
+
+    if (!$customerId) {
+        http_response_code(400);
+        echo json_encode(['error' => 'customer_id parameter is required']);
+        exit;
+    }
+
+    $stmt = $db->prepare("SELECT * FROM customer_contacts WHERE customer_id = :customer_id ORDER BY is_primary DESC, contact_type");
+    $stmt->bindParam(':customer_id', $customerId, PDO::PARAM_INT);
+    $stmt->execute();
+    $contacts = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // Convert is_primary to boolean
+    foreach ($contacts as &$contact) {
+        $contact['is_primary'] = (bool)$contact['is_primary'];
+    }
+
+    echo json_encode($contacts);
+} catch (PDOException $e) {
+    http_response_code(500);
+    echo json_encode(['error' => $e->getMessage()]);
+}
+?>--------------------------------------------------------------------------------
+
+FILE: server/api/customers.php
+--------------------------------------------------------------------------------
+<?php
+header('Content-Type: application/json');
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: GET');
+header('Access-Control-Allow-Headers: Content-Type');
+
+$dbPath = __DIR__ . '/../../database/customer.db';
+
+try {
+    $db = new PDO("sqlite:$dbPath");
+    $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+    $searchTerm = $_GET['search'] ?? '';
+    $customerId = $_GET['id'] ?? null;
+
+    if ($customerId) {
+        // Get single customer details
+        $stmt = $db->prepare("SELECT * FROM customers WHERE customer_id = :id");
+        $stmt->bindParam(':id', $customerId, PDO::PARAM_INT);
+        $stmt->execute();
+        $customer = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($customer) {
+            echo json_encode($customer);
+        } else {
+            http_response_code(404);
+            echo json_encode(['error' => 'Customer not found']);
+        }
+    } else {
+        // Get list of customers
+        if ($searchTerm) {
+            $stmt = $db->prepare("
+                SELECT * FROM customers 
+                WHERE customer_code LIKE :search 
+                OR first_name LIKE :search 
+                OR last_name LIKE :search 
+                OR company_name LIKE :search
+                ORDER BY last_name, first_name
+            ");
+            $searchParam = "%$searchTerm%";
+            $stmt->bindParam(':search', $searchParam);
+        } else {
+            $stmt = $db->prepare("SELECT * FROM customers ORDER BY last_name, first_name");
+        }
+        
+        $stmt->execute();
+        $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        echo json_encode($customers);
+    }
+} catch (PDOException $e) {
+    http_response_code(500);
+    echo json_encode(['error' => $e->getMessage()]);
+}
+?>--------------------------------------------------------------------------------
+
+FILE: src/css/styles.css
+--------------------------------------------------------------------------------
+:root {
+    --primary-color: #3498db;
+    --secondary-color: #2980b9;
+    --background-color: #f5f5f5;
+    --text-color: #333;
+    --light-gray: #ecf0f1;
+    --dark-gray: #7f8c8d;
+    --success-color: #2ecc71;
+    --warning-color: #e67e22;
+    --danger-color: #e74c3c;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    line-height: 1.6;
+}
+
+.app-container {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+header {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 1rem;
+    text-align: center;
+}
+
+.main-content {
+    display: flex;
+    flex: 1;
+}
+
+.sidebar {
+    width: 300px;
+    background-color: white;
+    border-right: 1px solid #ddd;
+    padding: 1rem;
+    overflow-y: auto;
+}
+
+.search-box {
+    margin-bottom: 1rem;
+    display: flex;
+}
+
+.search-box input {
+    flex: 1;
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 4px 0 0 4px;
+}
+
+.search-box button {
+    padding: 0.5rem 1rem;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 0 4px 4px 0;
+    cursor: pointer;
+}
+
+.search-box button:hover {
+    background-color: var(--secondary-color);
+}
+
+.customer-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.customer-item {
+    padding: 0.75rem;
+    background-color: var(--light-gray);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.customer-item:hover {
+    background-color: #ddd;
+}
+
+.customer-item.active {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.customer-item h3 {
+    font-size: 1rem;
+    margin-bottom: 0.25rem;
+}
+
+.customer-item p {
+    font-size: 0.8rem;
+    color: inherit;
+    opacity: 0.8;
+}
+
+.detail-view {
+    flex: 1;
+    padding: 1rem;
+    overflow-y: auto;
+}
+
+.customer-detail {
+    background-color: white;
+    padding: 1rem;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-bottom: 1rem;
+}
+
+.tabs {
+    display: flex;
+    border-bottom: 1px solid #ddd;
+    margin-bottom: 1rem;
+}
+
+.tab-btn {
+    padding: 0.75rem 1.5rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    position: relative;
+    font-weight: 600;
+    color: var(--dark-gray);
+}
+
+.tab-btn.active {
+    color: var(--primary-color);
+}
+
+.tab-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background-color: var(--primary-color);
+}
+
+.tab-content {
+    display: none;
+    padding: 1rem;
+    background-color: white;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.tab-content.active {
+    display: block;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
+
+.info-item {
+    margin-bottom: 0.75rem;
+}
+
+.info-item label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+    color: var(--dark-gray);
+    font-size: 0.9rem;
+}
+
+.info-item span {
+    display: block;
+    padding: 0.5rem;
+    background-color: var(--light-gray);
+    border-radius: 4px;
+}
+
+.contact-list, .address-list, .activity-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.contact-card, .address-card, .activity-card {
+    background-color: var(--light-gray);
+    padding: 1rem;
+    border-radius: 4px;
+}
+
+.contact-card h4, .address-card h4, .activity-card h4 {
+    margin-bottom: 0.5rem;
+}
+
+.contact-card p, .address-card p, .activity-card p {
+    margin-bottom: 0.25rem;
+    font-size: 0.9rem;
+}
+
+.primary-badge {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    background-color: var(--success-color);
+    color: white;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    margin-left: 0.5rem;
+}
+
+@media (max-width: 768px) {
+    .main-content {
+        flex-direction: column;
+    }
+    
+    .sidebar {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid #ddd;
+    }
+    
+    .info-grid {
+        grid-template-columns: 1fr;
+    }
+}--------------------------------------------------------------------------------
+
+FILE: src/index.html
+--------------------------------------------------------------------------------
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Management</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <h1>Customer Management</h1>
+        </header>
+        
+        <div class="main-content">
+            <aside class="sidebar">
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="Search customers...">
+                    <button id="searchBtn">Search</button>
+                </div>
+                <div class="customer-list" id="customerList">
+                    <!-- Customer list will be populated here -->
+                </div>
+            </aside>
+            
+            <main class="detail-view">
+                <div class="customer-detail" id="customerDetail">
+                    <div class="detail-header">
+                        <h2>Select a customer</h2>
+                    </div>
+                </div>
+                
+                <div class="tabs">
+                    <button class="tab-btn active" data-tab="info">Basic Info</button>
+                    <button class="tab-btn" data-tab="contacts">Contacts</button>
+                    <button class="tab-btn" data-tab="addresses">Addresses</button>
+                    <button class="tab-btn" data-tab="activity">Activity</button>
+                </div>
+                
+                <div class="tab-content active" id="infoTab">
+                    <!-- Basic info will be loaded here -->
+                </div>
+                
+                <div class="tab-content" id="contactsTab">
+                    <div class="contact-list" id="contactList">
+                        <!-- Contacts will be loaded here -->
+                    </div>
+                </div>
+                
+                <div class="tab-content" id="addressesTab">
+                    <div class="address-list" id="addressList">
+                        <!-- Addresses will be loaded here -->
+                    </div>
+                </div>
+                
+                <div class="tab-content" id="activityTab">
+                    <div class="activity-list" id="activityList">
+                        <!-- Activity will be loaded here -->
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script type="module" src="js/app.js"></script>
+</body>
+</html>--------------------------------------------------------------------------------
+
+FILE: src/ts/app.ts
+--------------------------------------------------------------------------------
+// app.ts
+import { fetchCustomers, fetchCustomerDetails, fetchCustomerContacts, fetchCustomerAddresses, fetchCustomerActivity } from '../../dist/assets/js/customerService';
+import { renderCustomerList, renderCustomerDetail, renderCustomerContacts, renderCustomerAddresses, renderCustomerActivity, setupTabNavigation, setupCustomerListClickHandler, setupSearchHandler } from '../../dist/assets/js/ui';
+
+class CustomerApp {
+    private currentCustomerId: number | null = null;
+
+    constructor() {
+        this.init();
+    }
+
+    private async init(): Promise<void> {
+        // Load initial customer list
+        await this.loadCustomers();
+        
+        // Setup UI event handlers
+        setupTabNavigation();
+        setupCustomerListClickHandler((customerId) => this.onCustomerSelected(customerId));
+        setupSearchHandler((searchTerm) => this.onSearch(searchTerm));
+    }
+
+    private async loadCustomers(searchTerm: string = ''): Promise<void> {
+        try {
+            const customers = await fetchCustomers(searchTerm);
+            renderCustomerList(customers, this.currentCustomerId);
+            
+            // If no customer is selected but we have customers, select the first one
+            if (!this.currentCustomerId && customers.length > 0) {
+                this.onCustomerSelected(customers[0].customer_id);
+            }
+        } catch (error) {
+            console.error('Error loading customers:', error);
+            alert('Failed to load customers. Please try again.');
+        }
+    }
+
+    private async onCustomerSelected(customerId: number): Promise<void> {
+        this.currentCustomerId = customerId;
+        
+        try {
+            // Update the customer list to show the selected customer
+            const customers = await fetchCustomers();
+            renderCustomerList(customers, customerId);
+            
+            // Load and display customer details
+            const customer = await fetchCustomerDetails(customerId);
+            renderCustomerDetail(customer);
+            
+            // Load and display contacts
+            const contacts = await fetchCustomerContacts(customerId);
+            renderCustomerContacts(contacts);
+            
+            // Load and display addresses
+            const addresses = await fetchCustomerAddresses(customerId);
+            renderCustomerAddresses(addresses);
+            
+            // Load and display activity
+            const activities = await fetchCustomerActivity(customerId);
+            renderCustomerActivity(activities);
+            
+            // Scroll to top of detail view
+            document.querySelector('.detail-view')?.scrollTo(0, 0);
+        } catch (error) {
+            console.error('Error loading customer details:', error);
+            alert('Failed to load customer details. Please try again.');
+        }
+    }
+
+    private async onSearch(searchTerm: string): Promise<void> {
+        await this.loadCustomers(searchTerm);
+    }
+}
+
+// Initialize the application when the DOM is fully loaded
+document.addEventListener('DOMContentLoaded', () => {
+    new CustomerApp();
+});--------------------------------------------------------------------------------
+
+FILE: src/ts/customerService.ts
+--------------------------------------------------------------------------------
+// customerService.ts
+import { Customer, CustomerContact, CustomerAddress, CustomerActivity } from '../../dist/assets/js/models';
+
+const API_BASE_URL = '/api';
+
+export async function fetchCustomers(searchTerm: string = ''): Promise<Customer[]> {
+    const url = searchTerm 
+        ? `${API_BASE_URL}/customers.php?search=${encodeURIComponent(searchTerm)}`
+        : `${API_BASE_URL}/customers.php`;
+    
+    const response = await fetch(url);
+    if (!response.ok) {
+        throw new Error('Failed to fetch customers');
+    }
+    return response.json();
+}
+
+export async function fetchCustomerDetails(customerId: number): Promise<Customer> {
+    const response = await fetch(`${API_BASE_URL}/customers.php?id=${customerId}`);
+    if (!response.ok) {
+        throw new Error('Failed to fetch customer details');
+    }
+    return response.json();
+}
+
+export async function fetchCustomerContacts(customerId: number): Promise<CustomerContact[]> {
+    const response = await fetch(`${API_BASE_URL}/contacts.php?customer_id=${customerId}`);
+    if (!response.ok) {
+        throw new Error('Failed to fetch customer contacts');
+    }
+    return response.json();
+}
+
+export async function fetchCustomerAddresses(customerId: number): Promise<CustomerAddress[]> {
+    const response = await fetch(`${API_BASE_URL}/addresses.php?customer_id=${customerId}`);
+    if (!response.ok) {
+        throw new Error('Failed to fetch customer addresses');
+    }
+    return response.json();
+}
+
+export async function fetchCustomerActivity(customerId: number): Promise<CustomerActivity[]> {
+    const response = await fetch(`${API_BASE_URL}/activity.php?customer_id=${customerId}`);
+    if (!response.ok) {
+        throw new Error('Failed to fetch customer activity');
+    }
+    return response.json();
+}--------------------------------------------------------------------------------
+
+FILE: src/ts/models.ts
+--------------------------------------------------------------------------------
+// models.ts
+export interface Customer {
+    customer_id: number;
+    customer_code: string;
+    first_name: string;
+    last_name: string;
+    company_name: string;
+    customer_type: 'individual' | 'business';
+    tax_id: string;
+    status: 'active' | 'inactive' | 'prospect' | 'lead' | 'banned';
+    notes: string;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface CustomerContact {
+    contact_id: number;
+    customer_id: number;
+    contact_type: 'email' | 'phone' | 'mobile' | 'fax' | 'other';
+    contact_value: string;
+    is_primary: boolean;
+    notes: string;
+}
+
+export interface CustomerAddress {
+    address_id: number;
+    customer_id: number;
+    address_type: 'billing' | 'shipping' | 'home' | 'work' | 'other';
+    line1: string;
+    line2: string;
+    city: string;
+    state_province: string;
+    postal_code: string;
+    country: string;
+    is_primary: boolean;
+    notes: string;
+}
+
+export interface CustomerActivity {
+    activity_id: number;
+    customer_id: number;
+    activity_type: string;
+    activity_details: string;
+    ip_address: string;
+    user_agent: string;
+    created_at: string;
+}--------------------------------------------------------------------------------
+
+FILE: src/ts/ui.ts
+--------------------------------------------------------------------------------
+// ui.ts
+import { Customer, CustomerContact, CustomerAddress, CustomerActivity } from './models';
+
+export function renderCustomerList(customers: Customer[], selectedCustomerId: number | null = null): void {
+    const customerListElement = document.getElementById('customerList');
+    if (!customerListElement) return;
+
+    customerListElement.innerHTML = customers.map(customer => `
+        <div class="customer-item ${customer.customer_id === selectedCustomerId ? 'active' : ''}" 
+             data-customer-id="${customer.customer_id}">
+            <h3>${customer.company_name || `${customer.first_name} ${customer.last_name}`}</h3>
+            <p>${customer.customer_code} • ${customer.customer_type}</p>
+        </div>
+    `).join('');
+}
+
+export function renderCustomerDetail(customer: Customer): void {
+    const customerDetailElement = document.getElementById('customerDetail');
+    if (!customerDetailElement) return;
+
+    customerDetailElement.innerHTML = `
+        <div class="detail-header">
+            <h2>${customer.company_name || `${customer.first_name} ${customer.last_name}`}</h2>
+            <p class="customer-meta">${customer.customer_code} • ${customer.status}</p>
+        </div>
+    `;
+
+    renderBasicInfoTab(customer);
+}
+
+function renderBasicInfoTab(customer: Customer): void {
+    const infoTabElement = document.getElementById('infoTab');
+    if (!infoTabElement) return;
+
+    infoTabElement.innerHTML = `
+        <div class="info-grid">
+            <div class="info-item">
+                <label>Customer Type</label>
+                <span>${customer.customer_type}</span>
+            </div>
+            <div class="info-item">
+                <label>Status</label>
+                <span>${customer.status}</span>
+            </div>
+            <div class="info-item">
+                <label>Tax ID</label>
+                <span>${customer.tax_id || 'N/A'}</span>
+            </div>
+            <div class="info-item">
+                <label>Created At</label>
+                <span>${new Date(customer.created_at).toLocaleString()}</span>
+            </div>
+            <div class="info-item">
+                <label>Updated At</label>
+                <span>${new Date(customer.updated_at).toLocaleString()}</span>
+            </div>
+        </div>
+        <div class="info-item">
+            <label>Notes</label>
+            <span>${customer.notes || 'No notes available'}</span>
+        </div>
+    `;
+}
+
+export function renderCustomerContacts(contacts: CustomerContact[]): void {
+    const contactListElement = document.getElementById('contactList');
+    if (!contactListElement) return;
+
+    if (contacts.length === 0) {
+        contactListElement.innerHTML = '<p>No contacts found for this customer.</p>';
+        return;
+    }
+
+    contactListElement.innerHTML = contacts.map(contact => `
+        <div class="contact-card">
+            <h4>${contact.contact_type} ${contact.is_primary ? '<span class="primary-badge">Primary</span>' : ''}</h4>
+            <p><strong>Value:</strong> ${contact.contact_value}</p>
+            ${contact.notes ? `<p><strong>Notes:</strong> ${contact.notes}</p>` : ''}
+        </div>
+    `).join('');
+}
+
+export function renderCustomerAddresses(addresses: CustomerAddress[]): void {
+    const addressListElement = document.getElementById('addressList');
+    if (!addressListElement) return;
+
+    if (addresses.length === 0) {
+        addressListElement.innerHTML = '<p>No addresses found for this customer.</p>';
+        return;
+    }
+
+    addressListElement.innerHTML = addresses.map(address => `
+        <div class="address-card">
+            <h4>${address.address_type} address ${address.is_primary ? '<span class="primary-badge">Primary</span>' : ''}</h4>
+            <p>${address.line1}</p>
+            ${address.line2 ? `<p>${address.line2}</p>` : ''}
+            <p>${address.city}, ${address.state_province} ${address.postal_code}</p>
+            <p>${address.country}</p>
+            ${address.notes ? `<p><strong>Notes:</strong> ${address.notes}</p>` : ''}
+        </div>
+    `).join('');
+}
+
+export function renderCustomerActivity(activities: CustomerActivity[]): void {
+    const activityListElement = document.getElementById('activityList');
+    if (!activityListElement) return;
+
+    if (activities.length === 0) {
+        activityListElement.innerHTML = '<p>No activity found for this customer.</p>';
+        return;
+    }
+
+    activityListElement.innerHTML = activities.map(activity => `
+        <div class="activity-card">
+            <h4>${activity.activity_type}</h4>
+            <p><strong>Date:</strong> ${new Date(activity.created_at).toLocaleString()}</p>
+            ${activity.activity_details ? `<p><strong>Details:</strong> ${activity.activity_details}</p>` : ''}
+            ${activity.ip_address ? `<p><strong>IP:</strong> ${activity.ip_address}</p>` : ''}
+        </div>
+    `).join('');
+}
+
+export function setupTabNavigation(): void {
+    const tabButtons = document.querySelectorAll('.tab-btn');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const tabId = button.getAttribute('data-tab');
+            
+            // Remove active class from all buttons and contents
+            tabButtons.forEach(btn => btn.classList.remove('active'));
+            tabContents.forEach(content => content.classList.remove('active'));
+            
+            // Add active class to clicked button and corresponding content
+            button.classList.add('active');
+            const tabContent = document.getElementById(`${tabId}Tab`);
+            if (tabContent) {
+                tabContent.classList.add('active');
+            }
+        });
+    });
+}
+
+export function setupCustomerListClickHandler(onCustomerSelected: (customerId: number) => void): void {
+    document.getElementById('customerList')?.addEventListener('click', (event) => {
+        const customerItem = (event.target as HTMLElement).closest('.customer-item');
+        if (customerItem) {
+            const customerId = parseInt(customerItem.getAttribute('data-customer-id') || '0');
+            if (customerId) {
+                onCustomerSelected(customerId);
+            }
+        }
+    });
+}
+
+export function setupSearchHandler(onSearch: (searchTerm: string) => void): void {
+    const searchBtn = document.getElementById('searchBtn');
+    const searchInput = document.getElementById('searchInput') as HTMLInputElement;
+
+    const performSearch = () => {
+        onSearch(searchInput.value.trim());
+    };
+
+    searchBtn?.addEventListener('click', performSearch);
+    searchInput?.addEventListener('keyup', (event) => {
+        if (event.key === 'Enter') {
+            performSearch();
+        }
+    });
+}--------------------------------------------------------------------------------
+
+FILE: tsconfig.json
+--------------------------------------------------------------------------------
+{
+  "compilerOptions": {
+    "target": "ES6",
+    "module": "ES6",
+    "outDir": "./dist/assets/js",
+    "rootDir": "./src/ts",
+    "strict": true,
+    "esModuleInterop": true,
+    "removeComments": true
+  },
+  "include": ["src/ts/**/*.ts"],
+  "exclude": ["node_modules"]
+}--------------------------------------------------------------------------------
+
+FILE: vite.config.js
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+
+================================================================================
+
+CONFIGURATION FILES
+--------------------------------------------------------------------------------
+
+FILE: package.json
+--------------------------------------------------------------------------------
+{
+  "name": "customer-spa",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "tsc && cp -r src/scss dist/assets/css && cp src/index.html dist/",
+    "dev": "tsc -w",
+    "start": "php -S localhost:8000 -t dist"
+  },
+  "devDependencies": {
+    "typescript": "^4.0.0"
+  }
+}--------------------------------------------------------------------------------
+
+FILE: tsconfig.json
+--------------------------------------------------------------------------------
+{
+  "compilerOptions": {
+    "target": "ES6",
+    "module": "ES6",
+    "outDir": "./dist/assets/js",
+    "rootDir": "./src/ts",
+    "strict": true,
+    "esModuleInterop": true,
+    "removeComments": true
+  },
+  "include": ["src/ts/**/*.ts"],
+  "exclude": ["node_modules"]
+}--------------------------------------------------------------------------------
