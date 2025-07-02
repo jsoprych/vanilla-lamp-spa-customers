@@ -6,7 +6,10 @@ dist/
 !dist/api/
 !dist/api/*.php
 
-# Database files (never commit these)
+# needed to run example
+!database/customer.db
+
+# Other Database files (never commit these)
 database/*.db
 database/*.sqlite
 database/*.db-journal
