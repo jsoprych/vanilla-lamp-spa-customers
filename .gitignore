@@ -6,13 +6,14 @@ dist/
 !dist/api/
 !dist/api/*.php
 
-# needed to run example
-!database/customer.db
-
 # Other Database files (never commit these)
 database/*.db
 database/*.sqlite
 database/*.db-journal
+
+# needed to run example
+!database/customer.db
+
 
 # Environment files
 .env
