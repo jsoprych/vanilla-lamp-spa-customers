@@ -2,12 +2,12 @@
   "name": "customer-spa",
   "version": "1.0.0",
   "scripts": {
-  "clean": "rm -rf dist/",
-  "prebuild": "npm run clean && mkdir -p dist/assets/{css,js} dist/api",
-  "build": "tsc && cp src/css/styles.css dist/assets/css/ && cp src/index.html dist/ && cp -r server/api/* dist/api/",
-  "start": "php -S localhost:8000 -t dist/"
-},
+    "clean": "rm -rf dist/ || true",
+    "prebuild": "npm run clean && mkdir -p dist/assets/css dist/assets/js dist/api",
+    "build": "tsc && ls -l dist/assets/js/ && cp src/css/styles.css dist/assets/css/ && cp src/index.html dist/ && cp -r server/api/. dist/api/",
+    "start": "php -S localhost:8000 -t dist/"
+  },
   "devDependencies": {
-    "typescript": "^4.0.0"
+    "typescript": "5.8.3"
   }
 }
