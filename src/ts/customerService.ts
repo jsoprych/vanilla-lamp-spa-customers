@@ -1,42 +1,45 @@
+// src/ts/customerService.ts
+import { apiFetch } from './apiUtils.js';
 import { 
-  Customer, 
-  CustomerContact, 
-  CustomerAddress, 
-  CustomerActivity 
-} from './models.js';
+    Customer, 
+    CustomerContact, 
+    CustomerAddress, 
+    CustomerActivity 
+} from './models';
 
-const API_BASE_URL = '/api';
+// Define a type for API parameters
+type ApiParams = Record<string, string>;
 
-export async function fetchCustomers(searchTerm: string = ''): Promise<Customer[]> {
-  const url = searchTerm 
-    ? `${API_BASE_URL}/customers.php?search=${encodeURIComponent(searchTerm)}`
-    : `${API_BASE_URL}/customers.php`;
-  
-  const response = await fetch(url);
-  if (!response.ok) throw new Error('Failed to fetch customers');
-  return response.json();
-}
+// Type-safe API methods
+export const fetchCustomers = (searchTerm: string = ''): Promise<Customer[]> => {
+    const params: ApiParams = searchTerm ? { search: searchTerm } : {};
+    return apiFetch<Customer[]>('/api/CustomerController.php', params);
+};
 
-export async function fetchCustomerDetails(customerId: number): Promise<Customer> {
-  const response = await fetch(`${API_BASE_URL}/customers.php?id=${customerId}`);
-  if (!response.ok) throw new Error('Failed to fetch customer details');
-  return response.json();
-}
+export const fetchCustomerDetails = (customerId: number): Promise<Customer> => {
+    const params: ApiParams = { customer_id: customerId.toString() };
+    return apiFetch<Customer>('/api/CustomerController.php', params);
+};
 
-export async function fetchCustomerContacts(customerId: number): Promise<CustomerContact[]> {
-  const response = await fetch(`${API_BASE_URL}/contacts.php?customer_id=${customerId}`);
-  if (!response.ok) throw new Error('Failed to fetch customer contacts');
-  return response.json();
-}
+export const fetchCustomerContacts = (customerId: number): Promise<CustomerContact[]> => {
+    const params: ApiParams = { customer_id: customerId.toString() };
+    return apiFetch<CustomerContact[]>('/api/ContactController.php', params)
+        .then(contacts => contacts.map(c => ({
+            ...c,
+            is_primary: Boolean(c.is_primary)
+        })));
+};
 
-export async function fetchCustomerAddresses(customerId: number): Promise<CustomerAddress[]> {
-  const response = await fetch(`${API_BASE_URL}/addresses.php?customer_id=${customerId}`);
-  if (!response.ok) throw new Error('Failed to fetch customer addresses');
-  return response.json();
-}
+export const fetchCustomerAddresses = (customerId: number): Promise<CustomerAddress[]> => {
+    const params: ApiParams = { customer_id: customerId.toString() };
+    return apiFetch<CustomerAddress[]>('/api/AddressController.php', params)
+        .then(addresses => addresses.map(a => ({
+            ...a,
+            is_primary: Boolean(a.is_primary)
+        })));
+};
 
-export async function fetchCustomerActivity(customerId: number): Promise<CustomerActivity[]> {
-  const response = await fetch(`${API_BASE_URL}/activity.php?customer_id=${customerId}`);
-  if (!response.ok) throw new Error('Failed to fetch customer activity');
-  return response.json();
-}
+export const fetchCustomerActivity = (customerId: number): Promise<CustomerActivity[]> => {
+    const params: ApiParams = { customer_id: customerId.toString() };
+    return apiFetch<CustomerActivity[]>('/api/ActivityController.php', params);
+};

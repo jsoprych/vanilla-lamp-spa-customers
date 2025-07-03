@@ -1,21 +1,16 @@
 {
   "compilerOptions": {
-    "target": "ES2017",
-    "module": "ES2020",
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "node",
     "outDir": "./dist/assets/js",
     "rootDir": "./src/ts",
     "strict": true,
     "esModuleInterop": true,
-    "moduleResolution": "node",
     "sourceMap": true,
-    "lib": ["ES2017", "DOM"],
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["src/ts/*"]
-    },
-    // Add these two lines to ensure JS file generation
-    "noEmit": false,
-    "noEmitOnError": true
+    "lib": ["ESNext", "DOM"],
+    "noEmitOnError": true,
+    "allowJs": true
   },
   "include": ["src/ts/**/*.ts"],
   "exclude": ["node_modules"]

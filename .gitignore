@@ -1,31 +1,17 @@
-# Dependency directories
 node_modules/
-
-# Production build (except API)
 dist/
 !dist/api/
 !dist/api/*.php
-
-# Other Database files (never commit these)
 database/*.db
 database/*.sqlite
 database/*.db-journal
-
-# needed to run example
 !database/customer.db
-
-
-# Environment files
 .env
 .env.local
-
-# IDE/OS files
 .vscode/
 .idea/
 .DS_Store
 Thumbs.db
-
-# Logs and cache
 *.log
 npm-debug.log*
 *.tsbuildinfo

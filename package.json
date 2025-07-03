@@ -3,11 +3,12 @@
   "version": "1.0.0",
   "scripts": {
     "clean": "rm -rf dist/ || true",
-    "prebuild": "npm run clean && mkdir -p dist/assets/css dist/assets/js dist/api",
-    "build": "tsc && ls -l dist/assets/js/ && cp src/css/styles.css dist/assets/css/ && cp src/index.html dist/ && cp -r server/api/. dist/api/",
-    "start": "php -S localhost:8000 -t dist/"
+    "prebuild": "npm run clean && mkdir -p dist/assets/css dist/assets/js dist/api dist/core",
+    "build": "esbuild src/ts/app.ts --bundle --format=esm --outfile=dist/assets/js/main.js --sourcemap && cp src/css/styles.css dist/assets/css/ && cp src/index.html dist/ && cp server/api/*.php dist/api/ && cp server/core/*.php dist/core/",
+    "serve": "php -S localhost:8000 -t dist/"
   },
   "devDependencies": {
-    "typescript": "5.8.3"
+    "esbuild": "^0.25.5",
+    "typescript": "^5.6.3"
   }
 }
