@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "scripts": {
     "clean": "rm -rf dist/ || true",
-    "prebuild": "npm run clean && mkdir -p dist/assets/css dist/assets/js dist/api dist/core",
-    "build": "esbuild src/ts/app.ts --bundle --format=esm --outfile=dist/assets/js/main.js --sourcemap && cp src/css/styles.css dist/assets/css/ && cp src/index.html dist/ && cp server/api/*.php dist/api/ && cp server/core/*.php dist/core/",
+    "prebuild": "npm run clean && mkdir -p dist/assets/css dist/assets/js dist/api dist/core dist/database",
+    "build": "esbuild src/ts/app.ts --bundle --format=esm --outfile=dist/assets/js/main.js --sourcemap && cp src/css/styles.css dist/assets/css/ && cp src/index.html dist/ && cp server/api/*.php dist/api/ && cp server/core/*.php dist/core/ && cp -r database/customer.db dist/database/",
     "serve": "php -S localhost:8000 -t dist/"
   },
   "devDependencies": {

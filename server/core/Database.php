@@ -8,7 +8,11 @@ final class Database {
 
     public static function getInstance(): PDO {
         if (self::$instance === null) {
-            $dbPath = realpath(__DIR__ . '/../../database/customer.db');
+            // Use __DIR__ relative to the runtime directory (dist/)
+            $dbPath = __DIR__ . '/../database/customer.db';
+            if (!file_exists($dbPath)) {
+                throw new RuntimeException("Database file not found at: $dbPath");
+            }
             self::$instance = new PDO("sqlite:$dbPath", null, null, [
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
