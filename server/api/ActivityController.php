@@ -30,5 +30,4 @@ class ActivityController extends GenericCrudController {
     }
 }
 
-// Handle the request
 (new ActivityController())->handleRequest();

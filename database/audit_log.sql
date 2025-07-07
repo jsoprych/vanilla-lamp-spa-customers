@@ -1,24 +1,12 @@
--- Main tables (SQLite3)
--- CREATE TABLE customers (
---    customer_id INTEGER PRIMARY KEY AUTOINCREMENT,
---    first_name TEXT NOT NULL,
---    last_name TEXT NOT NULL,
---    email TEXT UNIQUE,
---    phone TEXT,
---    status TEXT DEFAULT 'active',
---    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
--- );
-
--- Audit table used by PHP server/core
 CREATE TABLE audit_logs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     table_name TEXT NOT NULL,
     record_id INTEGER NOT NULL,
-    action TEXT NOT NULL CHECK(action IN ('CREATE','UPDATE','DELETE')),
+    action TEXT NOT NULL CHECK (action IN ('CREATE', 'UPDATE', 'DELETE', 'READ')),
     old_values TEXT,
     new_values TEXT,
-    user_ip TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    user_ip TEXT,.quit
+    created_at TEXT
 );
 
 -- Indexes

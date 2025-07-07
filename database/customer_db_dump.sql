@@ -182,11 +182,11 @@ CREATE TABLE audit_logs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     table_name TEXT NOT NULL,
     record_id INTEGER NOT NULL,
-    action TEXT NOT NULL CHECK(action IN ('CREATE','UPDATE','DELETE')),
+    action TEXT NOT NULL CHECK (action IN ('CREATE', 'UPDATE', 'DELETE', 'READ')),
     old_values TEXT,
     new_values TEXT,
     user_ip TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TEXT
 );
 DELETE FROM sqlite_sequence;
 INSERT INTO sqlite_sequence VALUES('customers',10);
@@ -198,6 +198,7 @@ INSERT INTO sqlite_sequence VALUES('customer_preferences',12);
 INSERT INTO sqlite_sequence VALUES('customer_tags',10);
 INSERT INTO sqlite_sequence VALUES('customer_relationships',3);
 INSERT INTO sqlite_sequence VALUES('customer_activity',7);
+INSERT INTO sqlite_sequence VALUES('audit_logs',0);
 CREATE TRIGGER update_customer_timestamp
 AFTER UPDATE ON customers
 FOR EACH ROW

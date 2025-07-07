@@ -1,4 +1,3 @@
-// ui.ts
 import { Customer, CustomerContact, CustomerAddress, CustomerActivity } from './models';
 
 export function renderCustomerList(customers: Customer[], selectedCustomerId: number | null = null): void {
@@ -128,11 +127,9 @@ export function setupTabNavigation(): void {
         button.addEventListener('click', () => {
             const tabId = button.getAttribute('data-tab');
             
-            // Remove active class from all buttons and contents
             tabButtons.forEach(btn => btn.classList.remove('active'));
             tabContents.forEach(content => content.classList.remove('active'));
             
-            // Add active class to clicked button and corresponding content
             button.classList.add('active');
             const tabContent = document.getElementById(`${tabId}Tab`);
             if (tabContent) {

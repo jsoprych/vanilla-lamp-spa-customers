@@ -9,9 +9,9 @@ class AddressController extends GenericCrudController {
         $this->table = 'customer_addresses';
         $this->primaryKey = 'address_id';
         $this->allowedFields = [
-            'customer_id', 'address_type', 'line1', 'line2',
+            'address_id', 'customer_id', 'address_type', 'line1', 'line2',
             'city', 'state_province', 'postal_code', 'country',
-            'is_primary', 'notes'
+            'is_primary', 'notes', 'created_at'
         ];
         $this->booleanFields = ['is_primary'];
     }
@@ -21,14 +21,29 @@ class AddressController extends GenericCrudController {
             throw new RuntimeException('customer_id parameter is required', 400);
         }
 
-        $stmt = $this->db->prepare("
-            SELECT * FROM {$this->table} 
-            WHERE customer_id = ? 
-            ORDER BY is_primary DESC, address_type
-        ");
-        $stmt->execute([$input['customer_id']]);
-        
-        return array_map([$this, 'processRecord'], $stmt->fetchAll(PDO::FETCH_ASSOC));
+        $conditions = ["customer_id = :customer_id"];
+        $params = [':customer_id' => $input['customer_id']];
+
+        $query = "SELECT * FROM {$this->table} WHERE " . implode(' AND ', $conditions);
+        $query .= " ORDER BY is_primary DESC, address_type"; // Removed created_at if not a column
+
+        if ($this->config['debug_mode']) {
+            error_log("[DEBUG] Address query: {$query}");
+            error_log("[DEBUG] Address params: " . json_encode($params));
+        }
+
+        try {
+            $stmt = $this->db->prepare($query);
+            foreach ($params as $key => $value) {
+                $type = is_int($value) ? PDO::PARAM_INT : PDO::PARAM_STR;
+                $stmt->bindValue($key, $value, $type);
+            }
+            $stmt->execute();
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            $this->handleDatabaseError($e, $query, $params);
+            throw new RuntimeException('Database query failed', 500);
+        }
     }
 
     protected function validateRequiredFields(array $data): void {
@@ -45,5 +60,4 @@ class AddressController extends GenericCrudController {
     }
 }
 
-// Handle the request
 (new AddressController())->handleRequest();
